@@ -10,7 +10,7 @@ dataact1=np.loadtxt("perfil_12_1200s.dat")
 x=dataact1[:,0]
 y=dataact1[:,1]
 
-plt.scatter(x,y)
+plt.plot(x,y)
 plt.show()
 
 

@@ -10,18 +10,37 @@ dataact1=np.loadtxt("perfil_7_600s.dat")
 x=dataact1[:,0]
 y=dataact1[:,1]
 
-plt.scatter(x,y)
-plt.show()
+
+#plt.scatter(x,y)
 
 
-p = np.array([761, 778, 795, 903, 928, 1038, 1090])
-l = np.array([1/6301.508, 1/6302, 1/6302.499, 1/6305.81, 1/6306.565, 1/6309.886, 1/6311.504])
+#plt.plot(x,y)
+#plt.show()
+
+#ubicacion de las lineas
+Oxi1p=np.array([577,578,579,580,581,582,583])
+Oxi1l=np.array([29087,28362,28157,28226,29044,29996,30712])
 
 
-m, b, r_value, p_value, err = stats.linregress(p,l)
+def fit(x,y):
+	arr=np.polyfit(x,y,2)
+	a=arr[0]
+	b=arr[1]
+	c=arr[2]
+	return a,b,c
 
-def cali(x):
-	return 1/(m*x + b)
+def center(x,y):
+	a,b,c=fit(x,y)
+	fito=a*x**2+b*x+c
+	center=-b/(2*a)
+	return center
 
-print (m)
-print (b)
+print center(Oxi1p,Oxi1l)
+
+
+
+#plt.plot(Oxi1p,Oxi1l,'b+:',label='data')
+#plt.plot(Oxi1p,fitoxi1,'ro:',label='fit')
+#plt.show()
+
+
