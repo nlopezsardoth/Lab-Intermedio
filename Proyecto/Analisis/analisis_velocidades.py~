@@ -1,0 +1,163 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+from scipy.optimize import curve_fit
+import sys
+
+from numpy.polynomial import Polynomial as P
+from scipy.optimize import curve_fit
+from numpy.polynomial import polynomial
+
+#Toma el numero del perfil
+text = sys.argv[1]
+
+#Importacion de datos
+
+c = 3*10**(8)
+o = np.genfromtxt("Teorico/lamda_oxigeno.txt")*10**(-10)
+fe = np.genfromtxt("Teorico/lamda_Fe.txt")*10**(-10)
+l1 =  1/o
+
+o_1 = np.genfromtxt("Minimos_Oxigeno/Perfil"+ text +"/min_1.txt")
+o_2 = np.genfromtxt("Minimos_Oxigeno/Perfil"+ text +"/min_2.txt")
+o_3 = np.genfromtxt("Minimos_Oxigeno/Perfil"+ text +"/min_3.txt")
+o_4 = np.genfromtxt("Minimos_Oxigeno/Perfil"+ text +"/min_4.txt")
+o_5 = np.genfromtxt("Minimos_Oxigeno/Perfil"+ text +"/min_5.txt")
+o_6 = np.genfromtxt("Minimos_Oxigeno/Perfil"+ text +"/min_6.txt")
+o_7 = np.genfromtxt("Minimos_Oxigeno/Perfil"+ text +"/min_7.txt")
+o_8 = np.genfromtxt("Minimos_Oxigeno/Perfil"+ text +"/min_8.txt")
+o_9 = np.genfromtxt("Minimos_Oxigeno/Perfil"+ text +"/min_9.txt")
+o_10 = np.genfromtxt("Minimos_Oxigeno/Perfil"+ text +"/min_10.txt")
+o_11 = np.genfromtxt("Minimos_Oxigeno/Perfil"+ text +"/min_11.txt")
+o_12 = np.genfromtxt("Minimos_Oxigeno/Perfil"+ text +"/min_12.txt")
+o_13 = np.genfromtxt("Minimos_Oxigeno/Perfil"+ text +"/min_13.txt")
+o_14 = np.genfromtxt("Minimos_Oxigeno/Perfil"+ text +"/min_14.txt")
+o_15 = np.genfromtxt("Minimos_Oxigeno/Perfil"+ text +"/min_15.txt")
+o_16 = np.genfromtxt("Minimos_Oxigeno/Perfil"+ text +"/min_16.txt")
+
+h_1 = np.genfromtxt("Minimos_Hierro/Perfil"+ text +"/min_1.txt")
+h_2 = np.genfromtxt("Minimos_Hierro/Perfil"+ text +"/min_2.txt")
+h_3 = np.genfromtxt("Minimos_Hierro/Perfil"+ text +"/min_3.txt")
+h_4 = np.genfromtxt("Minimos_Hierro/Perfil"+ text +"/min_4.txt")
+h_5 = np.genfromtxt("Minimos_Hierro/Perfil"+ text +"/min_5.txt")
+h_6 = np.genfromtxt("Minimos_Hierro/Perfil"+ text +"/min_6.txt")
+
+
+#Funcion para encontrar el pixel de los picos con precision
+
+def mini(x):
+	poly = lambda x, *p: polynomial.polyval(x, p)
+	p0 = np.full(3, 0.0)
+
+	#fit = np.polyfit(x[:,0], x[:,1], 2)
+	#return -fit[1]/(2*fit[0])
+
+	fit, res= curve_fit(poly, x[:,0], x[:,1], p0=p0, absolute_sigma=True)
+	return -fit[1]/(2*fit[2])
+
+
+min_o = np.array([mini(o_1), mini(o_2), mini(o_3), mini(o_4), mini(o_5), mini(o_6),mini(o_7), mini(o_8), mini(o_9), mini(o_10), mini(o_11), mini(o_12), mini(o_13), mini(o_14), mini(o_15), mini(o_16)])
+min_h = np.array([mini(h_1), mini(h_2), mini(h_3), mini(h_4), mini(h_5), mini(h_6)])
+
+#Funcion que relaciona lambda con el pixel
+
+def cali(xo, x, l):
+	poly = lambda x, *p: polynomial.polyval(x, p)
+	p0 = np.full(3, 0.0)
+
+	#fit = np.polyfit(xo, l, 2)
+	#a = fit[0]*x**2 + fit[1]*x + fit[2]
+
+	fit, res= curve_fit(poly, xo, l, p0=p0, absolute_sigma=True)
+	a = fit[2]*x**2 + fit[1]*x + fit[0]
+	return 1/a
+
+p1 = cali(min_o, min_h, l1)
+
+#Funcion para encontrar la velocidad radial
+
+def doppler(x):
+	a = []
+	for i in range(len(x)):
+		a.append(c*(x[i]-fe[i])/fe[i])
+	return a
+
+dopp = doppler(p1)
+
+
+#def velocity(x):
+#	poly = lambda x, *p: polynomial.polyval(x, p)
+#	p0 = np.full(2, 0.0)
+#
+#	fit, res= curve_fit(poly, x, p0=p0, absolute_sigma=True)
+#	return fit
+#
+#vel=velocity(dopp)
+
+
+#Devuelve la velocidad del perfil
+
+H=np.array(["2_300s","3_300s","4_300s","5_300s","6_600s","7_600s","8_300s","9_300s","10_1200s","11_300s","12_1200s"])
+
+print(H[int(text)-2], a)
+
+f = open ('Resultados/velocidad_'+'perfil'+text,'w')
+f.write(str(a))
+f.close()
+
+
+
+###########analisis de error########## +- 1 pixel
+
+
+#error inicial
+e0=0.05
+
+
+#error para el fit
+def errorparabola(x):
+	p0 = np.full(3, 0.0)
+	poly = lambda x, *p: polynomial.polyval(x, p)
+
+	p, res= curve_fit(poly, x[:,0], x[:,1], p0=p0, sigma=0.05, absolute_sigma=True)
+
+	err_center=np.sqrt((res[1,1]/(2*p[2]))**2 + ((p[1]*res[2,2])/(2*p[2]**2))**2)
+	return err_center
+
+ErroP_O = np.array([errorparabola(o_1), errorparabola(o_2), errorparabola(o_3), errorparabola(o_4), errorparabola(o_5), errorparabola(o_6), errorparabola(o_7), errorparabola(o_8), errorparabola(o_9), errorparabola(o_10), errorparabola(o_11), errorparabola(o_12), errorparabola(o_13), errorparabola(o_14), errorparabola(o_15), errorparabola(o_16)])
+
+ErroP_H = np.array([errorparabola(h_1), errorparabola(h_2), errorparabola(h_3), errorparabola(h_4), errorparabola(h_5), errorparabola(h_6)])
+
+
+#error para la calibracion
+def Erro_cali(xo, x, l, erro_O, erro_H):
+	poly = lambda x, *p: polynomial.polyval(x, p)
+	p0 = np.full(3, 0.0)
+
+	fit, res= curve_fit(poly, xo, l, p0=p0, sigma=erro_O, absolute_sigma=True)
+
+	erro_a= np.sqrt(((x**2) * res[2,2] )**2+(x*res[1,1])**2+(res[0,0])**2+((2*fit[2]*x+fit[1])*erro_H)**2)
+	a = fit[2]*x**2 + fit[1]*x + fit[0]
+
+	erro_cali=(1/(a**2))*erro_a
+
+	return erro_cali
+
+Erro_p1 = Erro_cali(min_o, min_h, l1, ErroP_O, ErroP_H)
+
+
+#error para el efecto Doppler
+def error_doppler(x,erro_x):
+	a = c*(x-fe)/fe
+	v = np.mean(doppler(p1))
+	
+	erro_a = (c*erro_x)/fe
+	#erro_v = 
+
+	return v
+
+
+
+
+print (error_doppler(p1,Erro_p1))
+
